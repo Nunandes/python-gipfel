@@ -1,5 +1,5 @@
 // Python Gipfel – Service Worker: App offline verfügbar machen
-const VERSION = 'gipfel-v2';
+const VERSION = 'gipfel-v3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
