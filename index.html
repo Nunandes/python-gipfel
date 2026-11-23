@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0000ff">
+<meta name="description" content="Python lernen als Spiel – 10 Level vom Basislager bis zum Gipfel.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Python Gipfel">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Python Gipfel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: sportlich, motivierend, verspielt aber klar
+   IDEA: eine Bergtour – jedes Level ist eine Station auf dem Weg zum Gipfel
+   PICTURE: Bergprofil mit Route, Stationen und deinem aktuellen Standort
+   COLOUR and TYPE: Yves-Klein-Blau als Feld, weisser Berg, Rot als Akzent (wie Alexia); Hanken Grotesk + JetBrains Mono
+   LAYOUT: Punkte-Kopf, Berg, Level-Chips, darunter Aufgabe links / Editor rechts */
+:root{color-scheme:light dark;--bg:light-dark(#f3f3ff,#05052a);--card:light-dark(#fff,#0b0b3d);--ink:light-dark(#00006b,#eeeeff);--mut:light-dark(#4a4a8a,#a9a9e0);--blue:#0000ff;--deep:#0000ff;--red:#ff0000;--ok:light-dark(#18804a,#4cd38a);--bad:light-dark(#bf3427,#ff7d6e);--line:light-dark(#d6d6f5,#1f1f6b);--code:#00003d}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Hanken Grotesk",system-ui,sans-serif;overflow-x:clip}
+code,pre,textarea{font-family:"JetBrains Mono",ui-monospace,monospace}
+.top{background:var(--deep);color:#fff;padding:calc(18px + env(safe-area-inset-top)) max(5vw,16px,env(safe-area-inset-right)) 0 max(5vw,16px,env(safe-area-inset-left))}
+.bar{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:end;justify-content:space-between;max-width:1240px;margin:0 auto}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.01em}
+h1 span{color:#fff;background:var(--red);padding:0 .18em;border-radius:6px}
+.sub{margin:10px 0 0;color:#d6d6ff;font-size:15px}
+.score{display:flex;gap:22px;align-items:end;flex-wrap:wrap}
+.pts{font-size:clamp(34px,5vw,48px);font-weight:800;line-height:1;color:#fff;white-space:nowrap}
+.pts small{font-size:15px;color:#d6d6ff;font-weight:500;margin-left:4px}
+.rank{min-width:190px}
+.rank b{display:block;font-size:18px}
+.meter{height:10px;border-radius:6px;background:rgba(255,255,255,.18);overflow:hidden;margin:6px 0 3px}
+.meter i{display:block;height:100%;background:var(--red);border-radius:6px;transition:width .6s}
+.rank small{color:#d6d6ff;font-size:13px}
+.mtn{max-width:1240px;margin:10px auto 0;position:relative}
+.mtn svg{display:block;width:100%;height:auto}
+.st-g{cursor:pointer}.st-g:focus{outline:none}.st-g:focus circle.c{stroke:var(--red);stroke-width:5}
+.lock{cursor:not-allowed}
+@keyframes pulse{0%{r:18;opacity:.9}100%{r:34;opacity:0}}
+.ring{animation:pulse 1.6s ease-out infinite;fill:none;stroke:var(--red);stroke-width:3}
+@media(prefers-reduced-motion:reduce){.ring{animation:none;opacity:.6}.meter i{transition:none}}
+.chips{display:flex;gap:8px;overflow-x:auto;max-width:1240px;margin:0 auto;padding:14px 0 18px;scrollbar-width:thin}
+.chip{flex:none;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:22px;padding:8px 14px;font:500 14px "Hanken Grotesk",sans-serif;min-height:44px;cursor:pointer;white-space:nowrap}
+.chip.on{background:#fff;color:#0000ff;border-color:#fff}
+.chip.done:not(.on){background:var(--red);border-color:var(--red)}
+.chip:disabled{opacity:.45;cursor:not-allowed}
+.chip:focus-visible,button:focus-visible,textarea:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+main{max-width:1240px;margin:0 auto;padding:clamp(20px,3vw,40px) max(5vw,16px) 40px}
+.lvhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:14px}
+.lvhead h2{margin:0;font-size:clamp(24px,3.4vw,32px);line-height:1.1}
+.lvhead p{margin:4px 0 0;color:var(--mut);max-width:68ch}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{min-width:44px;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 15px "Hanken Grotesk",sans-serif;cursor:pointer;padding:0 12px}
+.tab.on{border-color:var(--blue);box-shadow:inset 0 0 0 2px var(--blue)}
+.tab.ok{background:var(--red);color:#fff;border-color:var(--red)}
+.work{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+@media(max-width:900px){.work{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.card h3{margin:0 0 8px;font-size:21px;line-height:1.2}
+.card p{margin:0 0 12px}
+.card code{background:light-dark(#ececff,#14145a);padding:1px 5px;border-radius:5px;font-size:.92em}
+.given{background:var(--code);color:#e6e6ff;border-radius:10px;padding:12px 14px;margin:0 0 12px;font-size:14px;overflow-x:auto}
+.given.q:before{content:"Code"}
+.given:before{content:"Vorgegeben";display:block;color:#ff6b6b;font:600 12px "Hanken Grotesk",sans-serif;margin-bottom:4px}
+.worth{display:flex;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--mut)}
+.worth b{color:var(--ink)}
+.hint{border-left:4px solid var(--red);padding:8px 12px;background:light-dark(#fff0f0,#2a0f1f);border-radius:0 8px 8px 0;margin-top:12px;font-size:15px}
+.ed{background:var(--code);border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.edtop{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;color:#b3b3ee;font-size:13px;border-bottom:1px solid #1a1a6b}
+.st.ok{color:#4cd38a}.st.bad{color:#ff7d6e}
+textarea{display:block;width:100%;min-height:230px;resize:vertical;border:0;background:transparent;color:#f2f2ff;font-size:16px;line-height:1.6;padding:14px;tab-size:4;white-space:pre;overflow:auto}
+textarea:focus{outline:none}
+.btns{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;border-top:1px solid #1a1a6b}
+button.b{min-height:44px;padding:0 16px;border-radius:10px;border:0;font:600 15px "Hanken Grotesk",sans-serif;cursor:pointer}
+.b.go{background:var(--red);color:#fff}
+.b.sec{background:#0000ff;color:#fff}
+.b.ghost{background:transparent;color:#c4c4ff;border:1px solid #2a2a8a}
+.b:disabled{opacity:.5;cursor:wait}
+.out{margin:0;padding:12px 14px;min-height:64px;max-height:260px;overflow:auto;color:#dedeff;font-size:14px;border-top:1px solid #1a1a6b;white-space:pre-wrap}
+.out .e{color:#ff9d91}
+.msg{margin-top:14px;border-radius:12px;padding:14px 16px;font-weight:500;display:none}
+.msg.ok{display:block;background:light-dark(#e3f6ea,#123323);color:var(--ok)}
+.msg.bad{display:block;background:light-dark(#fde9e6,#3a1b18);color:var(--bad)}
+.msg button{margin-top:10px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
+.opt{min-height:52px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 16px "JetBrains Mono",monospace;cursor:pointer}
+.opt.r{background:var(--red);color:#fff;border-color:var(--red)}
+.opt.w{border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+foot,footer{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;color:var(--mut);font-size:14px;max-width:1240px;margin:0 auto;padding:0 max(5vw,16px) calc(40px + env(safe-area-inset-bottom))}
+footer button{background:none;border:1px solid var(--line);color:var(--mut);border-radius:10px;min-height:44px;padding:0 14px;font:500 14px "Hanken Grotesk",sans-serif;cursor:pointer}
+footer button.arm{border-color:var(--bad);color:var(--bad)}
+@media(max-width:600px){.score{width:100%;justify-content:space-between}.opts{grid-template-columns:minmax(0,1fr)}textarea{font-size:15px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <div><h1>Python <span>Gipfel</span></h1><p class="sub">30 Aufgaben, 10 Level – vom Basislager bis zum Gipfel.</p></div>
+    <div class="score">
+      <div class="pts" id="pts">0<small>Punkte</small></div>
+      <div class="rank"><b id="rank">Neuling</b><div class="meter"><i id="meter" style="width:0"></i></div><small id="next">…</small></div>
+    </div>
+  </div>
+  <div class="mtn" id="mtn" aria-label="Bergprofil mit deinen Levels"></div>
+  <nav class="chips" id="chips" aria-label="Levels"></nav>
+</header>
+<main>
+  <div class="lvhead"><div><h2 id="lvt">Level 1</h2><p id="lvi"></p></div><div class="tabs" id="tabs"></div></div>
+  <div class="work">
+    <section class="card" id="task"></section>
+    <section id="side"></section>
+  </div>
+</main>
+<footer>
+  <span id="inst"></span><span>Tipp kostet 30 % der Punkte, jeder Fehlversuch 10 % (max. 50 %), die Lösung anschauen gibt 0 Punkte. Fortschritt wird in diesem Browser gespeichert.</span>
+  <button id="reset">Fortschritt zurücksetzen</button>
+</footer>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script>
+{
+const LEVELS=[
+{name:'Basislager',topic:'print, Variablen, Rechnen',intro:'print() gibt Text aus, Variablen speichern Werte. / teilt normal, // ganzzahlig, % gibt den Rest.',tasks:[
+{type:'code',title:'Hallo Welt',text:'Gib mit <code>print()</code> genau diesen Text aus: <code>Hallo Performandes!</code>',test:`assert _out.strip() == "Hallo Performandes!", "Die Ausgabe muss genau «Hallo Performandes!» sein."`,hint:'Text gehört in Anführungszeichen: print("…")',sol:'print("Hallo Performandes!")'},
+{type:'code',title:'Kosten pro Klick',text:'Lege <code>budget = 500</code> und <code>klicks = 125</code> an. Berechne die Kosten pro Klick in <code>cpc</code> und gib sie aus.',test:`assert "cpc" in globals(), "Es gibt noch keine Variable cpc."
+assert cpc == 4, f"cpc sollte 4 sein, ist aber {cpc}."
+assert _out.strip() in ("4.0", "4"), "Gib cpc mit print(cpc) aus."`,hint:'Kosten pro Klick = Budget geteilt durch Klicks. Teilen geht mit /.',sol:'budget = 500\nklicks = 125\ncpc = budget / klicks\nprint(cpc)'},
+{type:'quiz',title:'Ganzzahl-Division',q:'Was gibt dieser Code aus?',code:'print(7 // 2)',opts:['3.5','3','4','1'],a:1,expl:'// ist die Ganzzahl-Division und schneidet die Nachkommastellen ab. 7 % 2 wäre der Rest (1).'}]},
+{name:'Strings',topic:'Text bearbeiten, f-Strings, Slicing',intro:'Strings haben viele Methoden wie .lower(), .title() oder .replace(). f-Strings bauen Text aus Variablen: f"{name} ist da".',tasks:[
+{type:'code',title:'Markenname',setup:'name = "anti matcha club"',text:'Erstelle <code>titel</code>, in dem jedes Wort von <code>name</code> gross beginnt, und gib es aus.',start:'# name ist schon vorhanden\n',test:`assert titel == "Anti Matcha Club", f"titel ist «{titel}»."`,hint:'Es gibt eine String-Methode, die jedes Wort gross schreibt: .title()',sol:'titel = name.title()\nprint(titel)'},
+{type:'code',title:'Preisschild',setup:'produkt = "Beutel"\npreis = 29.9',text:'Baue mit einem f-String die Variable <code>text</code> mit dem Inhalt <code>Beutel kostet CHF 29.90</code>. Nutze <code>produkt</code> und <code>preis</code> – der Preis braucht 2 Nachkommastellen.',start:'# produkt und preis sind schon vorhanden\n',test:`assert "f\\"" in _code or "f'" in _code, "Nutze einen f-String, also f vor den Anführungszeichen."
+assert text == "Beutel kostet CHF 29.90", f"text ist «{text}»."`,hint:'Formatieren auf 2 Stellen: {preis:.2f}',sol:'text = f"{produkt} kostet CHF {preis:.2f}"\nprint(text)'},
+{type:'quiz',title:'Slicing',q:'Was gibt dieser Code aus?',code:'print("Luzern"[1:4])',opts:['Luz','uze','uzer','Lu'],a:1,expl:'Der Index startet bei 0. [1:4] nimmt die Positionen 1, 2 und 3 – das Ende ist exklusiv.'}]},
+{name:'Bedingungen',topic:'if, elif, else, Vergleiche',intro:'Mit if / elif / else entscheidet dein Code. Vergleiche wie >= oder == ergeben True oder False.',tasks:[
+{type:'code',title:'CTR bewerten',setup:'ctr = 3.4',text:'Setze <code>bewertung</code> auf <code>"gut"</code> ab einer CTR von 3, auf <code>"ok"</code> ab 1, sonst auf <code>"schwach"</code>. Wir testen mit verschiedenen Werten – überschreibe <code>ctr</code> also nicht.',start:'# ctr ist schon vorhanden\n',test:`for v, e in [(3.4, "gut"), (3, "gut"), (1.5, "ok"), (1, "ok"), (0.2, "schwach")]:
+    n = {"ctr": v}
+    exec(_code, n)
+    assert n.get("bewertung") == e, f"Bei ctr={v} erwartet «{e}», erhalten «{n.get('bewertung')}»."`,hint:'Prüfe zuerst den höchsten Grenzwert: if ctr >= 3 … elif ctr >= 1 … else …',sol:'if ctr >= 3:\n    bewertung = "gut"\nelif ctr >= 1:\n    bewertung = "ok"\nelse:\n    bewertung = "schwach"'},
+{type:'code',title:'Zielgruppe',setup:'alter = 27',text:'<code>ist_zielgruppe</code> soll <code>True</code> sein, wenn <code>alter</code> zwischen 18 und 35 liegt (beide inklusive), sonst <code>False</code>.',start:'# alter ist schon vorhanden\n',test:`for v, e in [(17, False), (18, True), (27, True), (35, True), (36, False)]:
+    n = {"alter": v}
+    exec(_code, n)
+    assert n.get("ist_zielgruppe") is e, f"Bei alter={v} erwartet {e}, erhalten {n.get('ist_zielgruppe')}."`,hint:'Python kann Vergleiche verketten: 18 <= alter <= 35',sol:'ist_zielgruppe = 18 <= alter <= 35'},
+{type:'quiz',title:'Truthy & Falsy',q:'Was gibt dieser Code aus?',code:'print(bool(""))',opts:['True','False','None','Fehler'],a:1,expl:'Leere Strings, 0, leere Listen und None gelten als «falsy» – bool() macht daraus False.'}]},
+{name:'Schleifen',topic:'for, while, range',intro:'for läuft über jede Zahl oder jedes Element. range(1, 6) liefert 1 bis 5 – das Ende ist exklusiv.',tasks:[
+{type:'code',title:'Zählen',text:'Gib mit einer Schleife die Zahlen 1 bis 5 aus, jede auf einer eigenen Zeile.',test:`assert "for" in _code or "while" in _code, "Nutze eine Schleife."
+assert _out.split() == ["1", "2", "3", "4", "5"], "Erwartet: 1 bis 5, je eine Zeile."`,hint:'for i in range(1, 6): und darunter eingerückt print(i)',sol:'for i in range(1, 6):\n    print(i)'},
+{type:'code',title:'Umsatz summieren',setup:'umsaetze = [120, 80, 310, 45]',text:'Berechne die Summe von <code>umsaetze</code> mit einer for-Schleife in <code>total</code> – ohne <code>sum()</code>.',start:'# umsaetze ist schon vorhanden\ntotal = 0\n',test:`assert "sum(" not in _code, "Bitte ohne sum() – genau das sollst du nachbauen."
+assert total == 555, f"total sollte 555 sein, ist {total}."
+n = {"umsaetze": [1, 2, 3]}
+exec(_code, n)
+assert n["total"] == 6, "Mit [1, 2, 3] kommt nicht 6 heraus – rechnest du mit festen Zahlen?"`,hint:'Starte mit total = 0 und addiere in der Schleife jedes Element: total += u',sol:'total = 0\nfor u in umsaetze:\n    total += u\nprint(total)'},
+{type:'code',title:'InstaGram',text:'Gib die Zahlen 1 bis 15 aus. Ist eine Zahl durch 3 teilbar, gib stattdessen <code>Insta</code> aus, durch 5 → <code>Gram</code>, durch beide → <code>InstaGram</code>.',test:`exp = []
+for i in range(1, 16):
+    exp.append("InstaGram" if i % 15 == 0 else "Insta" if i % 3 == 0 else "Gram" if i % 5 == 0 else str(i))
+got = _out.split()
+assert got == exp, f"Erwartet beginnt mit {exp[:6]} … deine Ausgabe: {got[:6]} …"`,hint:'% gibt den Rest: i % 3 == 0 heisst «durch 3 teilbar». Prüfe den Fall «durch beide» zuerst.',sol:'for i in range(1, 16):\n    if i % 15 == 0:\n        print("InstaGram")\n    elif i % 3 == 0:\n        print("Insta")\n    elif i % 5 == 0:\n        print("Gram")\n    else:\n        print(i)'}]},
+{name:'Listen',topic:'append, remove, sorted, Slicing',intro:'Listen sind veränderbar. sorted() gibt eine neue sortierte Liste zurück, [:3] nimmt die ersten drei.',tasks:[
+{type:'code',title:'Keywords pflegen',setup:'keywords = ["tattoo luzern", "spam", "piercing"]',text:'Füge <code>"seo luzern"</code> am Ende von <code>keywords</code> hinzu und entferne <code>"spam"</code>.',start:'# keywords ist schon vorhanden\n',test:`assert keywords == ["tattoo luzern", "piercing", "seo luzern"], f"keywords ist {keywords}."`,hint:'.append(…) hängt an, .remove(…) entfernt ein Element nach Wert.',sol:'keywords.append("seo luzern")\nkeywords.remove("spam")\nprint(keywords)'},
+{type:'code',title:'Top 3 Preise',setup:'preise = [19, 49, 9, 99, 29, 59]',text:'<code>top3</code> soll die drei höchsten Preise enthalten, absteigend sortiert.',start:'# preise ist schon vorhanden\n',test:`assert top3 == [99, 59, 49], f"top3 ist {top3}."
+n = {"preise": [5, 1, 3, 4]}
+exec(_code, n)
+assert n["top3"] == [5, 4, 3], "Mit einer anderen Liste stimmt es nicht – rechnest du mit festen Werten?"`,hint:'sorted(preise, reverse=True) und dann [:3]',sol:'top3 = sorted(preise, reverse=True)[:3]\nprint(top3)'},
+{type:'quiz',title:'Referenzen',q:'Was gibt dieser Code aus?',code:'x = [1, 2, 3]\ny = x\ny.append(4)\nprint(len(x))',opts:['3','4','Fehler','7'],a:1,expl:'y = x kopiert nichts: Beide Namen zeigen auf dieselbe Liste. Für eine echte Kopie: y = x.copy()'}]},
+{name:'Funktionen',topic:'def, return, Parameter',intro:'Mit def baust du wiederverwendbare Bausteine. return gibt einen Wert zurück – print() zeigt ihn nur an.',tasks:[
+{type:'code',title:'CTR-Funktion',text:'Schreibe <code>ctr(klicks, impressionen)</code>: gibt die Klickrate in Prozent zurück, auf 2 Stellen gerundet. Bei 0 Impressionen soll 0 zurückkommen.',start:'def ctr(klicks, impressionen):\n    pass\n',test:`assert ctr(5, 200) == 2.5, f"ctr(5, 200) sollte 2.5 sein, ist {ctr(5, 200)}."
+assert ctr(1, 3) == 33.33, f"ctr(1, 3) sollte 33.33 sein, ist {ctr(1, 3)}."
+assert ctr(0, 0) == 0, "ctr(0, 0) sollte 0 sein."`,hint:'round(wert, 2) rundet. Prüfe vorher mit if, ob impressionen == 0 ist.',sol:'def ctr(klicks, impressionen):\n    if impressionen == 0:\n        return 0\n    return round(klicks / impressionen * 100, 2)'},
+{type:'code',title:'URL-Slug',text:'Schreibe <code>slugify(text)</code>: entfernt Leerzeichen am Rand, schreibt alles klein und ersetzt Leerzeichen durch <code>-</code>. Aus <code>"Anti Matcha Club"</code> wird <code>"anti-matcha-club"</code>.',start:'def slugify(text):\n    pass\n',test:`assert slugify("Anti Matcha Club") == "anti-matcha-club", f"Ergebnis: «{slugify('Anti Matcha Club')}»"
+r = slugify("  Outbreak Tattoo Luzern ")
+assert r == "outbreak-tattoo-luzern", f"Mit Leerzeichen am Rand: «{r}»"`,hint:'Methoden lassen sich verketten: text.strip().lower().replace(" ", "-")',sol:'def slugify(text):\n    return text.strip().lower().replace(" ", "-")'},
+{type:'quiz',title:'Standardwerte',q:'Was gibt dieser Code aus?',code:'def f(x, y=2):\n    return x * y\n\nprint(f(3) + f(3, 3))',opts:['12','15','18','Fehler'],a:1,expl:'f(3) nutzt y=2 → 6. f(3, 3) überschreibt y → 9. Zusammen 15.'}]},
+{name:'Dictionaries',topic:'Schlüssel und Werte',intro:'Ein Dictionary ordnet Schlüssel Werten zu. d.get("x", 0) liefert 0, falls der Schlüssel fehlt.',tasks:[
+{type:'code',title:'Kundenkarte',setup:'kunde = {"name": "Mia", "bestellungen": 2}',text:'Erhöhe <code>kunde["bestellungen"]</code> um 1 und füge den Schlüssel <code>"stadt"</code> mit dem Wert <code>"Luzern"</code> hinzu.',start:'# kunde ist schon vorhanden\n',test:`assert kunde == {"name": "Mia", "bestellungen": 3, "stadt": "Luzern"}, f"kunde ist {kunde}."`,hint:'kunde["bestellungen"] += 1 und kunde["stadt"] = …',sol:'kunde["bestellungen"] += 1\nkunde["stadt"] = "Luzern"\nprint(kunde)'},
+{type:'code',title:'Wörter zählen',text:'Schreibe <code>zaehle(text)</code>: gibt ein Dictionary zurück, das zählt, wie oft jedes Wort vorkommt. <code>zaehle("seo seo ads")</code> → <code>{"seo": 2, "ads": 1}</code>',start:'def zaehle(text):\n    pass\n',test:`assert zaehle("seo seo ads") == {"seo": 2, "ads": 1}, f"Ergebnis: {zaehle('seo seo ads')}"
+assert zaehle("") == {}, "Ein leerer Text sollte {} ergeben."`,hint:'text.split() trennt in Wörter. d[w] = d.get(w, 0) + 1 zählt hoch.',sol:'def zaehle(text):\n    d = {}\n    for w in text.split():\n        d[w] = d.get(w, 0) + 1\n    return d'},
+{type:'quiz',title:'get mit Standard',q:'Was gibt dieser Code aus?',code:'d = {"a": 1}\nprint(d.get("b", 0) + d["a"])',opts:['1','0','None','KeyError'],a:0,expl:'"b" fehlt, also liefert get den Standardwert 0. Dazu d["a"] = 1 → 1.'}]},
+{name:'Comprehensions',topic:'Listen und Dicts in einer Zeile',intro:'[x * 2 for x in liste if x > 0] baut eine neue Liste in einer Zeile – Filter inklusive.',tasks:[
+{type:'code',title:'Quadrate',text:'Erstelle <code>quadrate</code> mit den Quadratzahlen von 1 bis 10 – in einer Zeile mit einer List Comprehension.',test:`assert "append" not in _code and "for" in _code, "Nutze eine List Comprehension statt append."
+assert quadrate == [i * i for i in range(1, 11)], f"quadrate ist {quadrate}."`,hint:'[i ** 2 for i in range(…)]',sol:'quadrate = [i ** 2 for i in range(1, 11)]\nprint(quadrate)'},
+{type:'code',title:'Aktive Kampagnen',setup:'kampagnen = [\n    {"name": "Google Ads", "budget": 300},\n    {"name": "Insta", "budget": 80},\n    {"name": "TikTok", "budget": 150},\n    {"name": "Flyer", "budget": 40},\n]',text:'<code>aktive</code> soll die Namen aller Kampagnen mit einem Budget über 100 enthalten – mit einer Comprehension.',start:'# kampagnen ist schon vorhanden\n',test:`assert "for" in _code and "append" not in _code, "Nutze eine Comprehension."
+assert aktive == ["Google Ads", "TikTok"], f"aktive ist {aktive}."`,hint:'[k["name"] for k in kampagnen if …]',sol:'aktive = [k["name"] for k in kampagnen if k["budget"] > 100]\nprint(aktive)'},
+{type:'code',title:'Wortlängen',setup:'woerter = ["seo", "ads", "newsletter"]',text:'Baue mit einer Dict Comprehension <code>laengen</code>: jedes Wort als Schlüssel, seine Länge als Wert.',start:'# woerter ist schon vorhanden\n',test:`assert "{" in _code and "for" in _code, "Nutze eine Dict Comprehension mit {…}."
+assert laengen == {"seo": 3, "ads": 3, "newsletter": 10}, f"laengen ist {laengen}."`,hint:'{w: len(w) for w in woerter}',sol:'laengen = {w: len(w) for w in woerter}\nprint(laengen)'}]},
+{name:'Klassen',topic:'class, Methoden, Vererbung',intro:'Eine Klasse ist ein Bauplan. __init__ speichert Startwerte in self, Methoden arbeiten damit.',tasks:[
+{type:'code',title:'Kampagnen-Budget',text:'Schreibe die Klasse <code>Kampagne</code> mit <code>name</code> und <code>budget</code>. Die Methode <code>ausgeben(betrag)</code> zieht den Betrag vom Budget ab. Ist er grösser als das Budget, wirf einen <code>ValueError</code> (Budget bleibt gleich).',start:'class Kampagne:\n    def __init__(self, name, budget):\n        pass\n',test:`k = Kampagne("Herbst", 100)
+assert k.name == "Herbst" and k.budget == 100, "name und budget werden nicht gespeichert."
+k.ausgeben(30)
+assert k.budget == 70, f"Nach ausgeben(30) sollte budget 70 sein, ist {k.budget}."
+try:
+    k.ausgeben(500)
+    assert False, "ausgeben(500) sollte einen ValueError werfen."
+except ValueError:
+    pass
+assert k.budget == 70, "Bei einem Fehler darf das Budget nicht sinken."`,hint:'raise ValueError("Budget reicht nicht") – und zwar bevor du abziehst.',sol:'class Kampagne:\n    def __init__(self, name, budget):\n        self.name = name\n        self.budget = budget\n\n    def ausgeben(self, betrag):\n        if betrag > self.budget:\n            raise ValueError("Budget reicht nicht")\n        self.budget -= betrag'},
+{type:'code',title:'Schön ausgeben',text:'Schreibe die Klasse <code>Produkt(name, preis)</code>. <code>print(Produkt("Beutel", 29.9))</code> soll <code>Beutel: CHF 29.90</code> ausgeben.',test:`r = str(Produkt("Beutel", 29.9))
+assert r == "Beutel: CHF 29.90", f"str() ergibt «{r}»."`,hint:'Die Spezialmethode __str__(self) bestimmt, was print() zeigt. Sie muss einen String zurückgeben.',sol:'class Produkt:\n    def __init__(self, name, preis):\n        self.name = name\n        self.preis = preis\n\n    def __str__(self):\n        return f"{self.name}: CHF {self.preis:.2f}"'},
+{type:'code',title:'VIP-Kunden',text:'Klasse <code>Kunde</code> mit Methode <code>rabatt()</code>, die 0 zurückgibt. Klasse <code>VIPKunde</code> erbt von <code>Kunde</code> und gibt bei <code>rabatt()</code> 10 zurück.',test:`assert issubclass(VIPKunde, Kunde), "VIPKunde muss von Kunde erben: class VIPKunde(Kunde)"
+assert Kunde().rabatt() == 0, "Kunde().rabatt() sollte 0 sein."
+assert VIPKunde().rabatt() == 10, "VIPKunde().rabatt() sollte 10 sein."`,hint:'class VIPKunde(Kunde): und darin rabatt() neu definieren (überschreiben).',sol:'class Kunde:\n    def rabatt(self):\n        return 0\n\nclass VIPKunde(Kunde):\n    def rabatt(self):\n        return 10'}]},
+{name:'Gipfel',topic:'Rekursion, Generatoren, Dekoratoren',intro:'Die Profi-Werkzeuge: Funktionen, die sich selbst aufrufen, Werte Stück für Stück liefern oder andere Funktionen einpacken.',tasks:[
+{type:'code',title:'Fibonacci',text:'Schreibe <code>fib(n)</code> rekursiv: fib(0) = 0, fib(1) = 1, danach ist jede Zahl die Summe der zwei vorherigen.',start:'def fib(n):\n    pass\n',test:`assert _code.count("fib(") >= 2, "Nutze Rekursion: fib soll sich selbst aufrufen."
+for n, e in [(0, 0), (1, 1), (2, 1), (10, 55), (15, 610)]:
+    assert fib(n) == e, f"fib({n}) sollte {e} sein, ist {fib(n)}."`,hint:'Abbruchbedingung zuerst: if n < 2: return n – sonst fib(n - 1) + fib(n - 2)',sol:'def fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)'},
+{type:'code',title:'Batches',text:'Schreibe den Generator <code>batches(liste, n)</code>, der die Liste in Stücke der Grösse n liefert. <code>list(batches([1,2,3,4,5], 2))</code> → <code>[[1, 2], [3, 4], [5]]</code>',start:'def batches(liste, n):\n    pass\n',test:`import inspect
+assert inspect.isgeneratorfunction(batches), "Nutze yield – batches soll ein Generator sein."
+r = list(batches([1, 2, 3, 4, 5], 2))
+assert r == [[1, 2], [3, 4], [5]], f"Ergebnis: {r}"
+assert list(batches([], 3)) == [], "Eine leere Liste sollte nichts liefern."`,hint:'for i in range(0, len(liste), n): yield liste[i:i + n]',sol:'def batches(liste, n):\n    for i in range(0, len(liste), n):\n        yield liste[i:i + n]'},
+{type:'code',title:'Dekorator',text:'Schreibe den Dekorator <code>logge</code>: Bevor die eingepackte Funktion läuft, gibt er <code>Aufruf: &lt;funktionsname&gt;</code> aus – und gibt danach ihr Ergebnis zurück.',start:'def logge(func):\n    pass\n',test:`import io, contextlib
+@logge
+def plus(a, b):
+    return a + b
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    r = plus(2, 3)
+assert buf.getvalue().strip() == "Aufruf: plus", f"Ausgabe war «{buf.getvalue().strip()}»."
+assert r == 5, "Der Rückgabewert der Funktion geht verloren – return nicht vergessen."`,hint:'Innen eine Funktion wrapper(*args, **kwargs) definieren, darin printen und func(*args, **kwargs) zurückgeben. Aussen wrapper zurückgeben. Den Namen gibt func.__name__.',sol:'def logge(func):\n    def wrapper(*args, **kwargs):\n        print(f"Aufruf: {func.__name__}")\n        return func(*args, **kwargs)\n    return wrapper'}]}
+];
+const LV=LEVELS.map((l,i)=>({...l,n:i+1,alt:Math.round(435+i*(2128-435)/9)}));
+LV.forEach(l=>l.tasks.forEach((t,i)=>{t.lv=l.n;t.id=l.n+'-'+i}));
+const RANKS=[[0,'Neuling'],[60,'Tüftler'],[200,'Coder'],[450,'Pythonista'],[800,'Profi'],[1150,'Gipfelstürmer']];
+const KEY='pyGipfel.v1';
+let S={done:{},hint:{},sol:{},wrong:{},code:{}};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const base=t=>t.type==='quiz'?5*t.lv:10*t.lv;
+const earn=t=>{if(S.sol[t.id])return 0;let p=base(t);if(S.hint[t.id])p*=.7;p*=Math.max(.5,1-.1*(S.wrong[t.id]||0));return Math.round(p)};
+const total=()=>Object.values(S.done).reduce((a,b)=>a+b,0);
+const lvDone=n=>LV[n-1].tasks.every(t=>t.id in S.done);
+const unlocked=n=>n===1||lvDone(n-1);
+const firstOpen=()=>{for(const l of LV)if(!lvDone(l.n))return l.n;return 10};
+let lv=firstOpen(),ti=Math.max(0,LV[lv-1].tasks.findIndex(t=>!(t.id in S.done)));
+let py=null,pyMsg='Python lädt …',pyCls='st';
+
+function renderHead(){
+  const p=total();$('pts').innerHTML=p+'<small>Punkte</small>';
+  let r=0;RANKS.forEach((x,i)=>{if(p>=x[0])r=i});
+  $('rank').textContent=RANKS[r][1];
+  const nx=RANKS[r+1];
+  if(nx){const f=(p-RANKS[r][0])/(nx[0]-RANKS[r][0]);$('meter').style.width=Math.round(f*100)+'%';$('next').textContent=(nx[0]-p)+' Punkte bis «'+nx[1]+'»'}
+  else{$('meter').style.width='100%';$('next').textContent='Höchster Rang erreicht!'}
+}
+function renderMountain(){
+  const W=1000,H=330,cur=firstOpen(),all=LV.every(l=>lvDone(l.n));
+  const P=LV.map((l,i)=>[70+i*860/9,280-(l.alt-435)/(2128-435)*220]);
+  let d='M0 '+H+' L0 300 ';
+  P.forEach(([x,y],i)=>{if(i){const[px,py2]=P[i-1];d+=`L${(px+x)/2} ${(py2+y)/2+(i%2?18:6)} `}d+=`L${x} ${y} `});
+  d+=`L${W} 250 L${W} ${H}Z`;
+  const back='M0 330 L0 200 L120 150 L210 190 L330 110 L430 170 L560 95 L650 140 L760 80 L860 130 L1000 100 L1000 330Z';
+  const st=P.map(([x,y],i)=>{const n=i+1,dn=lvDone(n),un=unlocked(n),on=n===lv;
+    const fill=dn?'#ff0000':un?'#fff':'#c9c9f2',tc=dn?'#fff':un?'#0000ff':'#7070c0';
+    return `<g class="st-g${un?'':' lock'}" data-lv="${n}" tabindex="${un?0:-1}" role="button" aria-label="Level ${n} ${esc(LV[i].name)}${dn?', geschafft':un?'':', gesperrt'}">
+      ${n===cur&&!all?`<circle class="ring" cx="${x}" cy="${y}" r="18"/>`:''}
+      <circle class="c" cx="${x}" cy="${y}" r="${on?21:17}" fill="${fill}" stroke="${on?'#ff0000':'#0000ff'}" stroke-width="${on?5:3}"/>
+      <text x="${x}" y="${y+5.5}" text-anchor="middle" font-family="Hanken Grotesk" font-weight="800" font-size="16" fill="${tc}">${n}</text></g>`}).join('');
+  const [sx,sy]=P[9];
+  const flag=all?`<line x1="${sx}" y1="${sy-20}" x2="${sx}" y2="${sy-62}" stroke="#fff" stroke-width="3"/><path d="M${sx} ${sy-62} l34 10 l-34 10z" fill="#ff0000"/>`:'';
+  $('mtn').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bergroute mit 10 Levels">
+   <defs><linearGradient id="mg" x1="0" y1="40" x2="0" y2="330" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e4e4ff"/></linearGradient>
+   <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset="1" stop-color="#fff" stop-opacity=".06"/></linearGradient></defs>
+   <circle cx="150" cy="70" r="34" fill="#ff0000"/>
+   <path d="${back}" fill="url(#bg2)"/>
+   <path d="${d}" fill="url(#mg)"/>
+   
+   <polyline points="${P.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#ff0000" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"/>
+   ${flag}${st}</svg>`;
+  $('mtn').querySelectorAll('.st-g').forEach(g=>{const go=()=>{const n=+g.dataset.lv;if(unlocked(n))pick(n)};g.onclick=go;g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
+  $('chips').innerHTML=LV.map(l=>`<button class="chip${l.n===lv?' on':''}${lvDone(l.n)?' done':''}" data-lv="${l.n}" ${unlocked(l.n)?'':'disabled'}>${lvDone(l.n)?'✓ ':''}${l.n} · ${esc(l.name)} · ${l.alt} m</button>`).join('');
+  $('chips').querySelectorAll('.chip').forEach(b=>b.onclick=()=>pick(+b.dataset.lv));
+}
+function pick(n,i){lv=n;ti=i!=null?i:Math.max(0,LV[n-1].tasks.findIndex(t=>!(t.id in S.done)));renderAll()}
+function renderTask(){
+  const L=LV[lv-1],t=L.tasks[ti],done=t.id in S.done;
+  $('lvt').textContent=`Level ${lv} · ${L.name} · ${L.alt} m`;
+  $('lvi').textContent=L.topic+'. '+L.intro;
+  $('tabs').innerHTML=L.tasks.map((x,i)=>`<button class="tab${i===ti?' on':''}${x.id in S.done?' ok':''}" data-i="${i}" aria-label="Aufgabe ${i+1}">${x.id in S.done?'✓':i+1}</button>`).join('');
+  $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>pick(lv,+b.dataset.i));
+  const worth=done?`<span>Erledigt: <b>${S.done[t.id]} Punkte</b></span>`:`<span>Wert jetzt: <b>${earn(t)} von ${base(t)} Punkten</b></span>`;
+  if(t.type==='quiz'){
+    $('task').innerHTML=`<h3>${esc(t.title)}</h3><p>${t.q}</p><pre class="given q">${esc(t.code)}</pre><div class="worth">${worth}<span>Quiz</span></div>`;
+    $('side').innerHTML=`<div class="card"><h3>Deine Antwort</h3><div class="opts">${t.opts.map((o,i)=>`<button class="opt${done&&i===t.a?' r':''}" data-i="${i}" ${done?'disabled':''}>${esc(o)}</button>`).join('')}</div><div class="msg" id="msg"></div></div>`;
+    if(done)showMsg(true,'Richtig! '+t.expl);
+    $('side').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i;
+      if(i===t.a){S.done[t.id]=earn(t);save();renderHead();renderMountain();b.classList.add('r');$('side').querySelectorAll('.opt').forEach(x=>x.disabled=true);showMsg(true,`Richtig! +${S.done[t.id]} Punkte. ${t.expl}`,true)}
+      else{S.wrong[t.id]=(S.wrong[t.id]||0)+1;save();b.classList.add('w');b.disabled=true;showMsg(false,'Leider nicht – versuch es nochmal.');$('task').querySelector('.worth').innerHTML=`<span>Wert jetzt: <b>${earn(t)} von ${base(t)} Punkten</b></span><span>Quiz</span>`}
+    });
+    return;
+  }
+  $('task').innerHTML=`<h3>${esc(t.title)}</h3><p>${t.text}</p>${t.setup?`<pre class="given">${esc(t.setup)}</pre>`:''}<div class="worth">${worth}</div>${S.hint[t.id]||S.sol[t.id]?`<div class="hint"><b>Tipp:</b> ${esc(t.hint)}</div>`:''}`;
+  $('side').innerHTML=`<div class="ed"><div class="edtop"><span>dein_code.py · Strg/⌘ + Enter prüft</span><span class="${pyCls}" id="pystat">${pyMsg}</span></div>
+    <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python-Code"></textarea>
+    <div class="btns"><button class="b go" id="chk">Prüfen</button><button class="b sec" id="run">Nur ausführen</button>
+    ${done?'':`<button class="b ghost" id="hnt">${S.hint[t.id]?'Tipp offen':'Tipp (−30 %)'}</button><button class="b ghost" id="sol">Lösung (0 Pkt.)</button>`}
+    <button class="b ghost" id="rst">Code zurücksetzen</button></div>
+    <pre class="out" id="out">Ausgabe erscheint hier.</pre></div><div class="msg" id="msg"></div>`;
+  const ed=$('code');ed.value=S.code[t.id]??(t.start||'# Dein Code hier\n');
+  ed.onkeydown=e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ed.selectionStart;ed.setRangeText('    ',s,ed.selectionEnd,'end')}
+    else if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();check(t,true)}
+    else if(e.key==='Enter'){const s=ed.selectionStart,line=ed.value.slice(0,s).split('\n').pop();let ind=line.match(/^ */)[0];if(/:\s*$/.test(line))ind+='    ';e.preventDefault();ed.setRangeText('\n'+ind,s,ed.selectionEnd,'end')}
+  };
+  ed.oninput=()=>{S.code[t.id]=ed.value;save()};
+  $('chk').onclick=()=>check(t,true);$('run').onclick=()=>check(t,false);
+  $('rst').onclick=()=>{ed.value=t.start||'# Dein Code hier\n';delete S.code[t.id];save()};
+  if($('hnt'))$('hnt').onclick=()=>{S.hint[t.id]=true;save();renderTask()};
+  if($('sol'))$('sol').onclick=()=>{S.sol[t.id]=true;S.code[t.id]=t.sol;save();renderTask();showMsg(false,'Lösung eingefügt – lies sie durch und klicke auf «Prüfen». Diese Aufgabe gibt jetzt 0 Punkte.')};
+  setBusy(!py);
+  if(done)showMsg(true,`Geschafft – ${S.done[t.id]} Punkte.`,true);
+}
+function setBusy(b){['chk','run'].forEach(id=>{const e=$(id);if(e)e.disabled=b})}
+function showMsg(ok,txt,next){
+  const m=$('msg');if(!m)return;
+  m.className='msg '+(ok?'ok':'bad');m.textContent=txt;
+  if(next&&ok){const L=LV[lv-1];let target=null;
+    if(ti<L.tasks.length-1)target=[lv,ti+1];else if(lv<10&&lvDone(lv))target=[lv+1,null];
+    if(target){const b=document.createElement('button');b.className='b go';b.style.display='block';b.textContent=target[0]!==lv?`Level ${lv+1} starten →`:'Nächste Aufgabe →';b.onclick=()=>pick(target[0],target[1]);m.appendChild(b)}
+    else if(lv===10&&lvDone(10)){m.textContent+=' Du stehst auf dem Gipfel!'}}
+}
+function check(t,withTest){
+  if(!py)return;
+  const code=$('code').value;S.code[t.id]=code;save();
+  const out=$('out');out.textContent='läuft …';setBusy(true);
+  setTimeout(()=>{
+    let r;
+    try{const f=py.globals.get('_run');r=JSON.parse(f(code,t.setup||'',withTest?t.test:''));f.destroy()}
+    catch(e){r={out:'',err:String(e),ok:false}}
+    out.innerHTML=(r.out?esc(r.out):'(keine Ausgabe)')+(r.err&&r.ok!==false?`\n<span class="e">${esc(r.err)}</span>`:'');
+    setBusy(false);
+    if(!withTest){if(r.err)showMsg(false,'Fehler beim Ausführen – schau in die Ausgabe.');else{const m=$('msg');m.className='msg'}return}
+    const done=t.id in S.done;
+    if(r.ok){
+      if(!done){S.done[t.id]=earn(t);save();renderHead();renderMountain()}
+      const lvNow=lvDone(lv)&&!done;
+      showMsg(true,(done?'Stimmt immer noch.':`Richtig! +${S.done[t.id]} Punkte.`)+(lvNow&&lv<10?` Level ${lv} geschafft – Level ${lv+1} ist frei.`:''),true);
+      $('tabs').querySelectorAll('.tab')[ti].classList.add('ok');
+    }else{
+      if(!done){S.wrong[t.id]=(S.wrong[t.id]||0)+1;save()}
+      showMsg(false,(r.err||'Test nicht bestanden.'));
+      const w=$('task').querySelector('.worth');if(w&&!done)w.innerHTML=`<span>Wert jetzt: <b>${earn(t)} von ${base(t)} Punkten</b></span>`;
+    }
+  },20);
+}
+function renderAll(){renderHead();renderMountain();renderTask()}
+$('reset').onclick=e=>{const b=e.currentTarget;
+  if(!b.classList.contains('arm')){b.classList.add('arm');b.textContent='Wirklich alles löschen?';setTimeout(()=>{b.classList.remove('arm');b.textContent='Fortschritt zurücksetzen'},4000);return}
+  S={done:{},hint:{},sol:{},wrong:{},code:{}};save();b.classList.remove('arm');b.textContent='Fortschritt zurücksetzen';pick(1,0)};
+const RUNNER=`
+import sys, io, json, traceback
+def _run(code, setup, test):
+    ns = {"__name__": "__main__"}
+    buf = io.StringIO()
+    old = sys.stdout
+    cnt = [0]
+    def tr(f, e, a):
+        cnt[0] += 1
+        if cnt[0] > 1500000:
+            raise TimeoutError("Zu viele Schritte – hast du eine Endlosschleife?")
+        return tr
+    err = None
+    ok = None
+    sys.stdout = buf
+    try:
+        if setup:
+            exec(setup, ns)
+        c = compile(code, "dein_code.py", "exec")
+        sys.settrace(tr)
+        exec(c, ns)
+    except BaseException as e:
+        err = "".join(traceback.format_exception_only(type(e), e)).strip()
+    finally:
+        sys.settrace(None)
+        sys.stdout = old
+    out = buf.getvalue()
+    if err is None and test:
+        ns["_out"] = out
+        ns["_code"] = code
+        sys.stdout = io.StringIO()
+        try:
+            sys.settrace(tr)
+            exec(test, ns)
+            ok = True
+        except AssertionError as e:
+            ok = False
+            err = str(e) or "Test nicht bestanden."
+        except BaseException as e:
+            ok = False
+            err = "".join(traceback.format_exception_only(type(e), e)).strip()
+        finally:
+            sys.settrace(None)
+            sys.stdout = old
+    elif err is not None and test:
+        ok = None
+    return json.dumps({"out": out, "err": err, "ok": ok})
+`;
+renderAll();
+if('serviceWorker' in navigator&&location.protocol==='https:'){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+try{if(!matchMedia('(display-mode: standalone)').matches&&!navigator.standalone&&/iPhone|iPad/.test(navigator.userAgent))$('inst').textContent='Als App installieren: Teilen-Symbol → «Zum Home-Bildschirm».'}catch(e){}
+(async()=>{
+  try{py=await loadPyodide();py.runPython(RUNNER);pyMsg='Python bereit';pyCls='st ok'}
+  catch(e){pyMsg='Python lädt nicht – Seite neu laden';pyCls='st bad'}
+  const s=$('pystat');if(s){s.textContent=pyMsg;s.className=pyCls}setBusy(!py);
+})();
+}
+</script>
+</body>
+</html>
